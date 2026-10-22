@@ -1,0 +1,5 @@
+source_file,vendor,invoice_id,invoice_date,currency,subtotal,tax,total,errors
+invoice_10.pdf,Bluebird Parts,DEMO-010,2026-10-10,,500.00,70.00,570.00,missing_or_ambiguous_currency
+invoice_11.pdf,Evergreen Trading,DEMO-011,2026-10-11,EGP,550.00,77.00,999.00,total_does_not_match_subtotal_plus_tax
+invoice_12.pdf,Northwind Supplies,DEMO-001,2026-10-12,USD,600.00,84.00,684.00,duplicate_vendor_invoice_id
+invoice_13.pdf,Northwind Supplies,DEMO-013,,EUR,650.00,91.00,741.00,invalid_invoice_date

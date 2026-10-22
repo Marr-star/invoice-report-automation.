@@ -1,0 +1,10 @@
+source_file,vendor,invoice_id,invoice_date,currency,subtotal,tax,total
+invoice_01.pdf,Northwind Supplies,DEMO-001,2026-10-01,EUR,50.00,7.00,57.00
+invoice_02.pdf,Bright Harbor LLC,DEMO-002,2026-10-02,EGP,100.00,14.00,114.00
+invoice_03.pdf,Maple Office Co,DEMO-003,2026-10-03,USD,150.00,21.00,171.00
+invoice_04.pdf,Bluebird Parts,DEMO-004,2026-10-04,EUR,200.00,28.00,228.00
+invoice_05.pdf,Evergreen Trading,DEMO-005,2026-10-05,EGP,250.00,35.00,285.00
+invoice_06.pdf,Solaris Paper,DEMO-006,2026-10-06,USD,300.00,42.00,342.00
+invoice_07.pdf,Northwind Supplies,DEMO-007,2026-10-07,EUR,350.00,49.00,399.00
+invoice_08.pdf,Bright Harbor LLC,DEMO-008,2026-10-08,EGP,400.00,56.00,456.00
+invoice_09.pdf,Maple Office Co,DEMO-009,2026-10-09,USD,450.00,63.00,513.00
