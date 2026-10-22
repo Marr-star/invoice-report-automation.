@@ -1,105 +1,121 @@
-# Invoice-to-Excel Automation
+# Invoice Report Automation
 
-A reproducible **Python 3.12 portfolio project** that turns a folder of **text-based PDF invoices** into a validated Excel workbook and CSV files. Built for a small-business workflow: extract invoice data, route uncertain records for human review, flag duplicates, and summarize amounts **by currency** (no misleading cross-currency sum).
+Turn a folder of PDF invoices into a validated Excel workbook and CSV reports.
 
-## Quick start
+**Python 3.12 · PyMuPDF · pandas · openpyxl · pytest**
+
+![Sample processing results](docs/report-preview.png)
+
+[Download sample workbook](samples/output/invoice_report.xlsx) · [View extracted data](samples/output/invoices.csv) · [Inspect review queue](samples/output/processing_errors.csv)
+
+## What it does
+
+Extracts vendor, invoice ID, date, currency, subtotal, tax and total from text-based PDFs. Validates the extracted fields, flags duplicate invoices and routes uncertain records for review. Missing data stays missing.
+
+- **Consistent reports:** normalized dates, identifiers and decimal amounts.
+- **Traceable issues:** every rejected record includes its source filename and reason.
+- **Currency-aware summaries:** totals remain separate for EUR, USD, GBP and EGP.
+- **Local processing:** PDF extraction runs on your machine.
+
+## Try it
 
 ```bash
+git clone https://github.com/Marr-star/invoice-report-automation..git
+cd invoice-report-automation.
 python -m venv .venv
-# macOS/Linux: source .venv/bin/activate
-# Windows PowerShell: .venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-python generate_samples.py
+```
+
+Activate the environment:
+
+```bash
+# macOS / Linux
+source .venv/bin/activate
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+```
+
+Install dependencies and process the included samples:
+
+```bash
+python -m pip install -r requirements.txt
 python -m invoice_automation --input samples/invoices --output output
+```
+
+Open `output/invoice_report.xlsx`. The workbook contains **Invoices**, **Needs Review** and **Currency Summary** sheets.
+
+## Sample invoices
+
+Thirteen fictional invoices use three visual templates, varied field labels and deliberate validation failures.
+
+![Synthetic invoice templates](docs/sample-layouts.png)
+
+| Sample result | Count |
+| --- | ---: |
+| PDFs processed | 13 |
+| Accepted invoices | 9 |
+| Invoices requiring review | 4 |
+
+The review queue demonstrates a missing currency, a total mismatch, a duplicate invoice and an invalid date.
+
+## Exported files
+
+| File | Contents |
+| --- | --- |
+| `invoice_report.xlsx` | Accepted records, review queue and currency totals |
+| `invoices.csv` | Validated, deduplicated records |
+| `processing_errors.csv` | Rejected records with explicit reasons |
+| `summary_by_currency.csv` | Accepted invoice counts and totals by currency |
+| `processing_summary.json` | Processing counts and currency totals |
+
+## Validation rules
+
+All seven invoice fields are required. Dates must be valid, invoice IDs must match supported characters, currency codes must be supported and amounts must be nonnegative with no more than two decimal places. Subtotal plus tax must equal the total within 0.01.
+
+Conflicting labels and currency symbols trigger review. Duplicates are matched by normalized vendor and invoice ID. The first valid file in filename order is accepted; later duplicates require review, including those with different amounts. Text exported to spreadsheets is escaped against formula injection.
+
+## Tests and development
+
+```bash
 python -m pytest -q
+python generate_samples.py
 ```
 
-Python 3.12 recommended. The bundled `samples/invoices/` already contains 13 fabricated examples, so generation is optional.
+The 25 tests cover extraction, invalid and missing values, duplicates, multiple PDF files, corrupt PDFs, scanned-like inputs, spreadsheet formula injection and exported workbook values. GitHub Actions runs the tests and sample pipeline on Python 3.12.
 
-## Recorded demo
-
-![Actual terminal output](docs/demo.gif)
-
-[Terminal recording](docs/demo.cast) captures actual command output. This is a terminal demo, not a desktop screen capture. Regenerate it with `python docs/record_demo.py` (requires Pillow and a DejaVu Sans Mono font).
-
-![Three synthetic invoice layouts](docs/sample-layouts.png)
-
-## Results
-
-- `output/invoices.csv` — records that passed all checks
-- `output/processing_errors.csv` — rejected/uncertain records with explicit reasons
-- `output/summary_by_currency.csv` — counts and totals separated by currency
-- `output/processing_summary.json` — processed, accepted and review counts plus currency totals
-- `output/invoice_report.xlsx` — styled workbook with **Invoices**, **Needs Review**, and **Currency Summary** tabs
-
-Example output is committed under `samples/output/`. All invoice values are fictional.
-
-## Checks and processing rules
-
-1. Extract text with PyMuPDF, using rule-based **labeled fields** (`Vendor`, `Invoice No`, `Invoice Date`, `Currency`, `Subtotal`, `Tax`, `Grand Total`).
-2. Require and normalize all seven fields; do not fabricate missing values.
-3. Normalize invoice dates to ISO (`YYYY-MM-DD`), money to `Decimal`, and supported currency codes to uppercase (`USD`, `EUR`, `GBP`, `EGP`).
-4. Check that subtotal + tax equals total (within 0.01); reject negative monetary values.
-5. De-duplicate successful records by normalized **vendor + invoice ID**. Duplicate files go to the review sheet.
-6. If extraction is ambiguous or fails, send the invoice to review instead of treating it as correct.
-
-### Demonstration outcomes
-
-The 13 synthetic invoices deliberately include a missing currency, mismatched total, duplicate ID/vendor, and invalid date. The pipeline accepts 9 valid invoices and places 4 in the review queue.
-
-Accepted sample totals: EUR 684.00, EGP 855.00, USD 1,026.00. Values are never added across currencies.
-
-Example before: `Seller: Northwind Supplies`, `Invoice No: DEMO-001`, `Grand Total: 57.00` in [a sample PDF](samples/invoices/invoice_01.pdf).
-
-Example after: `Northwind Supplies,DEMO-001,2026-10-01,EUR,50.00,7.00,57.00` in [the resulting CSV](samples/output/invoices.csv). Download [the example workbook](samples/output/invoice_report.xlsx) to inspect all three tabs.
-
-## MVP milestones and acceptance tests
-
-1. Generate 13 synthetic PDFs with varied labels, order, fonts and spacing.
-2. Extract complete labeled values; normalize dates, vendor whitespace, IDs and amounts.
-3. Reject missing/ambiguous fields, invalid dates/IDs/currencies, malformed or negative amounts, symbol mismatches and totals that fail reconciliation.
-4. Accept one record per normalized vendor and invoice ID. The first valid file in filename order wins; later duplicates go to review, including differing amounts. Resolve conflicts manually.
-5. Export workbook, CSV reports and processing counts; tests reopen the workbook to verify numeric cells and expected totals.
-6. Run 25 tests and the sample pipeline on Python 3.12 in GitHub Actions.
-
-## Folder structure
-
-```
-invoice_automation/       # extraction, batch processing, CLI
-samples/invoices/         # 13 synthetic input PDFs
-samples/output/           # generated example output files
-tests/                    # pytest validation and duplicate tests
-generate_samples.py       # generate synthetic PDFs
-requirements.txt
-LICENSE
+```text
+invoice_automation/    Extraction, validation, reporting and CLI
+samples/invoices/     Synthetic PDF inputs
+samples/output/       Example Excel and CSV reports
+tests/                Unit and integration tests
+docs/                 Visual previews and terminal demo
 ```
 
-## Limitations
+<details>
+<summary>Terminal demo and preview generation</summary>
 
-- **Text-based PDFs only:** scanned/image PDFs require a separate OCR pipeline, intentionally not included.
-- This is a deliberately narrow, rule-based MVP. It recognizes documented label patterns, not arbitrary invoice layouts or foreign-language invoices.
-- No line-item extraction, multi-invoice PDFs, partial credits, complex tax structures, exchange rates, or accounting-system integration.
-- Ambiguous values are sent for review. A *plausible but incorrectly labeled* value can still evade rule-based checks; use human review before financial decisions.
-- Dates use ISO or documented day-first numeric conventions, including ambiguous dates such as 01/02/2026 meaning 1 February. US month-first dates require different rules.
-- One invoice per PDF. Multiple differing labeled values cause review; repeated identical labels cannot reliably distinguish two invoices.
-- Input is one local folder (non-recursive), including `.pdf` and `.PDF`. There is no web upload interface.
-- Money uses dot decimals and optional comma thousands separators, maximum two decimal places. European decimal commas and credit notes are unsupported. CSV values retain decimal precision; Excel receives numeric cells.
-- PyMuPDF has AGPL/commercial licensing requirements; review its license before distributing a proprietary application. The MIT license applies to this project's own code.
-- PDFs are processed locally. Do not upload confidential customer invoices to public GitHub.
+![Recorded terminal demo](docs/demo.gif)
 
-## Tests
+[Download the terminal recording](docs/demo.cast). This recording shows actual CLI execution. The report image above is a static visualization of exported sample data, not a web interface.
 
-Run `python -m pytest -q` for valid extraction, missing vendor, impossible dates, inconsistent totals, blank/scanned-like PDFs, duplicate invoices, and an empty input folder.
+To regenerate the visual assets, install Pillow and provide DejaVu Sans fonts, then run:
 
-## Learning walkthrough
+```bash
+python docs/build_previews.py
+python docs/record_demo.py
+```
 
-1. Run `python generate_samples.py` to recreate the input PDFs.
-2. Run `python -m pytest -q` to check extraction, validation, batch handling and workbook exports.
-3. Run `python -m invoice_automation --input samples/invoices --output output`.
-4. Open `output/invoice_report.xlsx` and investigate `Needs Review`.
+</details>
 
-For an optional desktop recording, open the `samples/invoices` folder; open two PDFs showing distinct layouts; run the one-line CLI; open the Excel report's three tabs; highlight rejected invoices and summary totals; run `python -m pytest -q`. Record a 60–90 second screen capture yourself and link the video here when ready.
+## Supported scope
+
+- Text-based PDFs with supported English field labels. One invoice per file.
+- A single local input folder, including `.pdf` and `.PDF` files. No web upload interface.
+- ISO or day-first numeric dates. `01/02/2026` means 1 February.
+- Dot-decimal amounts with optional comma thousands separators.
+
+Scanned PDFs need OCR and are routed to review. Arbitrary layouts, European decimal commas, credit notes, complex tax structures, line-item extraction and accounting integrations are outside this version. Repeated identical labels cannot reliably distinguish multiple invoices within one PDF. Rule-based extraction still needs human verification before accounting use.
 
 ## License
 
-MIT. All demo invoice content is synthetic.
+Project code: [MIT](LICENSE). Sample invoice data is fictional. PyMuPDF is separately licensed under AGPL or a commercial license; review its terms for proprietary distribution.
